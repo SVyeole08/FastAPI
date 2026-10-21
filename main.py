@@ -9,6 +9,7 @@ Products = [
 ]
 
 
+# get method is used only to read the data which is been already uploaded
 @app.get("/")
 def welcome():
     return "Welcome to the FastAPI"
@@ -28,7 +29,30 @@ def get_product_by_id(id: int):
     return "Product not found"
 
 
+# post method is used to add data
 @app.post("/product")
 def add_product(product: Product):
     Products.append(product)
-    return f"Product got added successfully len(Products) = {len(Products)}"
+    return f"Product got added successfully | len(Products) = {len(Products)}"
+
+
+# put method is used to update data
+@app.put("/product")
+def update_product(id: int, product: Product):
+    for pid in range(len(Products)):
+        if Products[pid].id == id:
+            Products[pid] = product
+            return f"Product of id {id} got updated successfully."
+
+    return "Product not found"
+
+
+# delete method is used to delete data
+@app.delete("/product")
+def delete_product(id: int):
+    for pid in range(len(Products)):
+        if Products[pid].id == id:
+            del Products[pid]
+            return f"Product of id {id} got deleted successfully"
+
+    return "Product not found"
