@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DB_URL = os.environ["DATABASE_URL"]
+DB_URL = os.environ["DB_URL"]
 
 if DB_URL.startswith("postgres://"):
     DB_URL = DB_URL.replace("postgres://", "postgresql+psycopg2://", 1)
