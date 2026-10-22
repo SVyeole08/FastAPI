@@ -1,5 +1,5 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
 
 from models import Product
 from database import session, engine
@@ -15,6 +15,14 @@ Products = [
 ]
 
 
+def get_db():
+    db = session
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 def init_db():
     db = session
     count = db.query(prd).count
@@ -22,6 +30,7 @@ def init_db():
         for product in Products:
             db.add(prd(**product.model_dump()))
         db.commit()
+
 
 init_db()
 
@@ -33,17 +42,16 @@ def welcome():
 
 
 @app.get("/products")
-def get_products():
-    # DB = session()
-    # DB.query()
-    return Products
+def get_products(db: Session = Depends(get_db)):
+    db_products = db.query(prd).all()
+    return db_products
 
 
 @app.get("/product/{id}")
-def get_product_by_id(id: int):
-    for product in Products:
-        if product.id == id:
-            return product
+def get_product_by_id(id: int, db: Session = Depends(get_db)):
+    db_product = db.query(prd).filter(prd.id == id).first()
+    if db_product:
+        return db_product
 
     return "Product not found"
 
