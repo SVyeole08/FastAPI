@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from models import Product
+from database import session
 
 app = FastAPI()
 
@@ -17,6 +18,7 @@ def welcome():
 
 @app.get("/products")
 def get_products():
+    DB = session()
     return Products
 
 
