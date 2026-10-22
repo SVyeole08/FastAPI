@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from models import Product
-from database import session
+from database import session, engine
+from database_models import Base
 
+Base.metadata.create_all(engine)
 app = FastAPI()
 
 Products = [
