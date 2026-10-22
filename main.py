@@ -25,7 +25,7 @@ def get_db():
 
 def init_db():
     db = session
-    count = db.query(prd).count
+    count = db.query(prd).count()
     if count == 0:
         for product in Products:
             db.add(prd(**product.model_dump()))
@@ -58,28 +58,32 @@ def get_product_by_id(id: int, db: Session = Depends(get_db)):
 
 # post method is used to add data
 @app.post("/product")
-def add_product(product: Product):
-    Products.append(product)
-    return f"Product got added successfully | len(Products) = {len(Products)}"
+def add_product(product: Product, db: Session = Depends(get_db)):
+    db.add(prd(**product.model_dump()))
+    db.commit()
+    return f"Product got added successfully | Count of Products = {db.query(prd).count()}"
 
 
 # put method is used to update data
 @app.put("/product")
-def update_product(id: int, product: Product):
-    for pid in range(len(Products)):
-        if Products[pid].id == id:
-            Products[pid] = product
-            return f"Product of id {id} got updated successfully."
-
+def update_product(id: int, product: Product, db: Session = Depends(get_db)):
+    db_product = db.query(prd).filter(prd.id == id).first()
+    if db_product:
+        db_product.name = product.name
+        db_product.description = product.description
+        db_product.price = product.price
+        db_product.quantity = product.quantity
+        db.commit()
+        return f"Product of id {id} got updated"
     return "Product not found"
 
 
 # delete method is used to delete data
 @app.delete("/product")
-def delete_product(id: int):
-    for pid in range(len(Products)):
-        if Products[pid].id == id:
-            del Products[pid]
-            return f"Product of id {id} got deleted successfully"
-
+def delete_product(id: int, db: Session = Depends(get_db)):
+    db_product = db.query(prd).filter(prd.id == id).first()
+    if db_product:
+        db.delete(db_product)
+        db.commit()
+        return f"Product of id {id} got deleted"
     return "Product not found"
