@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {createRoot} from "react-dom/client";
 import {
     Search,
@@ -15,13 +15,16 @@ import {
     Smartphone,
     Laptop,
     Monitor,
-    Box
+    Box,
+    ChevronDown
 } from "lucide-react";
 import "./styles.css";
 
 const API = import.meta.env.DEV
     ? "/api"
     : import.meta.env.VITE_API_BASE_URL;
+
+const PAGE_SIZE = 10;
 
 const money = n => new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -39,11 +42,14 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [query, setQuery] = useState("");
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const [modal, setModal] = useState(false);
     const [editing, setEditing] = useState(null);
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState({id: "", name: "", description: "", price: "", quantity: ""});
     const [notice, setNotice] = useState("");
+
+    const sentinelRef = useRef(null);
 
     async function load() {
         setLoading(true);
@@ -51,7 +57,9 @@ function App() {
         try {
             const r = await fetch(`${API}/products`);
             if (!r.ok) throw new Error(`API returned ${r.status}`);
-            setProducts(await r.json());
+            const data = await r.json();
+            setProducts(data);
+            setVisibleCount(PAGE_SIZE);
         } catch (e) {
             setError(`Couldn't reach the API at ${API}. Start FastAPI and check its database connection.`);
         } finally {
@@ -63,10 +71,45 @@ function App() {
         load();
     }, []);
 
+    // Reset pagination to first 10 items whenever search query changes
+    useEffect(() => {
+        setVisibleCount(PAGE_SIZE);
+    }, [query]);
+
     const filtered = useMemo(
         () => products.filter(p => `${p.name} ${p.description} ${p.id}`.toLowerCase().includes(query.toLowerCase())),
         [products, query]
     );
+
+    const visibleProducts = useMemo(
+        () => filtered.slice(0, visibleCount),
+        [filtered, visibleCount]
+    );
+
+    const hasMore = visibleCount < filtered.length;
+    const remainingCount = filtered.length - visibleCount;
+
+    function loadMore() {
+        setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filtered.length));
+    }
+
+    // Optional scroll-triggered lazy loading via IntersectionObserver
+    useEffect(() => {
+        const node = sentinelRef.current;
+        if (!node || !hasMore || loading) return;
+
+        const observer = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting) {
+                    setVisibleCount(prev => Math.min(prev + PAGE_SIZE, filtered.length));
+                }
+            },
+            {rootMargin: "120px"}
+        );
+
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [hasMore, loading, filtered.length]);
 
     const totalValue = products.reduce((s, p) => s + p.price * p.quantity, 0);
     const units = products.reduce((s, p) => s + p.quantity, 0);
@@ -262,65 +305,79 @@ function App() {
                             )}
                         </div>
                     ) : (
-                        <div className="table-wrap">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>PRODUCT</th>
-                                        <th className="num">PRICE</th>
-                                        <th>STOCK LEVEL</th>
-                                        <th className="num">VALUE</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filtered.map(p => {
-                                        const Icon = iconFor(p.name);
-                                        const stockStatus = p.quantity <= 5 ? "low" : p.quantity <= 10 ? "medium" : "healthy";
-                                        return (
-                                            <tr key={p.id}>
-                                                <td className="product-col" data-label="Product">
-                                                    <div className="product-cell">
-                                                        <div className="product-icon"><Icon size={18}/></div>
-                                                        <div>
-                                                            <b>{p.name}</b>
-                                                            <small>{p.description || "No description"} · ID {p.id}</small>
+                        <>
+                            <div className="table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>PRODUCT</th>
+                                            <th className="num">PRICE</th>
+                                            <th>STOCK LEVEL</th>
+                                            <th className="num">VALUE</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {visibleProducts.map(p => {
+                                            const Icon = iconFor(p.name);
+                                            const stockStatus = p.quantity <= 5 ? "low" : p.quantity <= 10 ? "medium" : "healthy";
+                                            return (
+                                                <tr key={p.id}>
+                                                    <td className="product-col" data-label="Product">
+                                                        <div className="product-cell">
+                                                            <div className="product-icon"><Icon size={18}/></div>
+                                                            <div>
+                                                                <b>{p.name}</b>
+                                                                <small>{p.description || "No description"} · ID {p.id}</small>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="price num" data-label="Price">
-                                                    {money(p.price)}
-                                                </td>
-                                                <td data-label="Stock Level">
-                                                    <span className={`stock ${stockStatus}`}>
-                                                        <i/>
-                                                        {p.quantity} {p.quantity === 1 ? "unit" : "units"}
-                                                    </span>
-                                                </td>
-                                                <td className="price num" data-label="Value">
-                                                    {money(p.price * p.quantity)}
-                                                </td>
-                                                <td className="actions-col">
-                                                    <div className="actions">
-                                                        <button title="Edit product" onClick={() => openEdit(p)}>
-                                                            <Pencil size={15}/>
-                                                        </button>
-                                                        <button title="Delete product" className="danger" onClick={() => remove(p)}>
-                                                            <Trash2 size={15}/>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                                                    </td>
+                                                    <td className="price num" data-label="Price">
+                                                        {money(p.price)}
+                                                    </td>
+                                                    <td data-label="Stock Level">
+                                                        <span className={`stock ${stockStatus}`}>
+                                                            <i/>
+                                                            {p.quantity} {p.quantity === 1 ? "unit" : "units"}
+                                                        </span>
+                                                    </td>
+                                                    <td className="price num" data-label="Value">
+                                                        {money(p.price * p.quantity)}
+                                                    </td>
+                                                    <td className="actions-col">
+                                                        <div className="actions">
+                                                            <button title="Edit product" onClick={() => openEdit(p)}>
+                                                                <Pencil size={15}/>
+                                                            </button>
+                                                            <button title="Delete product" className="danger" onClick={() => remove(p)}>
+                                                                <Trash2 size={15}/>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {hasMore && (
+                                <div className="load-more-bar" ref={sentinelRef}>
+                                    <button type="button" className="load-more-btn" onClick={loadMore}>
+                                        <ChevronDown size={16}/>
+                                        Load {Math.min(PAGE_SIZE, remainingCount)} more products
+                                        <span className="load-more-badge">{remainingCount} remaining</span>
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     <div className="panel-foot">
-                        <span>Showing <b>{filtered.length}</b> of <b>{products.length}</b> products</span>
-                        <span className="live"><i/> Live data</span>
+                        <span>
+                            Showing <b>{visibleProducts.length}</b> of <b>{filtered.length}</b>
+                            {query ? ` matching (out of ${products.length} total)` : " products"}
+                        </span>
                     </div>
                 </section>
 

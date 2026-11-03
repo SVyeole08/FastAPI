@@ -155,16 +155,6 @@ button:active:not(:disabled) {
   color: #a7f3d0;
 }
 
-/* Static Status Indicators (No blinking) */
-.status-dot,
-.live i {
-  display: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #10b981;
-}
-
 .sidebar-bottom small {
   color: #6ee7b7;
   font-family: var(--font-mono);
@@ -624,6 +614,44 @@ tbody tr:hover {
   color: #fca5a5;
 }
 
+/* Load More Pagination Bar */
+.load-more-bar {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  display: flex;
+  justify-content: center;
+}
+
+.load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-radius: 9px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.load-more-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-focus);
+}
+
+.load-more-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
 /* Panel Footer */
 .panel-foot {
   background: var(--bg-card);
@@ -647,6 +675,7 @@ tbody tr:hover {
   color: #34d399;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
 }
 
 /* Loading & Empty States */
@@ -844,6 +873,13 @@ footer span {
   .search {
     flex: 1;
     width: auto;
+  }
+  .load-more-bar {
+    padding: 14px 16px;
+  }
+  .load-more-btn {
+    width: 100%;
+    justify-content: center;
   }
 
   /* Mobile Table to Card Converter */
