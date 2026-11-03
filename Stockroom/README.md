@@ -78,7 +78,7 @@ The application stores products in a PostgreSQL table named `products`.
 | `price`       | Float                | Product price            |
 | `quantity`    | Integer              | Available stock quantity |
 
-The SQLAlchemy model is defined in `backend/database_models.py`. The Pydantic schema in `backend/models.py` defines the
+The SQLAlchemy model is defined in `Stockroom/backend`. The Pydantic schema in `Stockroom/backend` defines the
 product data expected by the API.
 
 On backend startup, the application creates the table if it does not exist. If the table is empty, it inserts two sample
@@ -86,7 +86,7 @@ products.
 
 ## API Endpoints
 
-The API is implemented in `backend/main.py`.
+The API is implemented in `Stockroom/backend`.
 
 | Method   | Endpoint           | Purpose                   |
 |----------|--------------------|---------------------------|
