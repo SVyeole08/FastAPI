@@ -1,4 +1,4 @@
-DB_URL = 'sqlite:///./todo.db'
+DB_URL = 'sqlite:///./todosapp.db'
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

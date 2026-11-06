@@ -6,6 +6,8 @@ __pycache__/
 .idea/
 node_modules/
 .env.production
+*.db
+
 # C extensions
 *.so
 
